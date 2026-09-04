@@ -29,11 +29,26 @@ def alphas_from_betas(betas):
     return 1.0- betas
     pass
 
-# Step 3 - cumprod_alphas (not yet solved)
-# TODO: implement
+# Step 3 - cumprod_alphas
+import torch
+import torch.nn.functional as F
 
-# Step 4 - extract_into_batch (not yet solved)
-# TODO: implement
+def cumprod_alphas(alphas):
+    # TODO: cumulative product of alphas
+    return torch.cumprod(alphas,dim=0)
+    pass
+
+# Step 4 - extract_into_batch
+import torch
+import torch.nn.functional as F
+
+def extract_into_batch(a, t, x):
+    # TODO: gather a[t] and reshape to (B, 1, 1, 1) for broadcasting with x
+    B = t.shape[0]
+    out = a[t]
+    return out.reshape(B, 1, 1, 1)
+
+    pass
 
 # Step 5 - q_sample (not yet solved)
 # TODO: implement
