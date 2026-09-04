@@ -426,11 +426,57 @@ def ddpm_p_sample(x_t, t, params: dict, schedule: dict, noise=None):
     return x_prev    # TODO: one reverse step x_t -> x_{t-1}
     pass
 
-# Step 18 - ddpm_sample_loop (not yet solved)
-# TODO: implement
+# Step 18 - ddpm_sample_loop
+import torch
+import torch.nn.functional as F
 
-# Step 19 - sample_quality_mse (not yet solved)
-# TODO: implement
+def ddpm_sample_loop(params: dict, schedule: dict, shape: tuple, seed: int = 0):
+    torch.manual_seed(seed)
+
+    # Start from pure Gaussian noise
+    x = torch.randn(shape)
+
+    T = schedule["T"]
+
+    # Reverse diffusion: T-1 -> 0
+    for step in reversed(range(T)):
+        t_batch = torch.full(
+            (shape[0],),
+            step,
+            dtype=torch.long
+        )
+
+        x = ddpm_p_sample(
+            x,
+            t_batch,
+            params,
+            schedule
+        )
+
+    return x    # TODO: ancestral sampling from pure noise to x0
+    pass
+
+# Step 19 - sample_quality_mse
+import torch
+import torch.nn.functional as F
+
+def sample_quality_mse(samples, dataset) -> float:
+    # Flatten each image
+    samples_flat = samples.flatten(start_dim=1)
+    dataset_flat = dataset.flatten(start_dim=1)
+
+    # Pairwise squared differences: (N, M, features)
+    diff = samples_flat[:, None, :] - dataset_flat[None, :, :]
+
+    # MSE for every sample-dataset pair: (N, M)
+    mse = (diff ** 2).mean(dim=-1)
+
+    # Nearest dataset image for each generated sample
+    min_mse = mse.min(dim=1).values
+
+    # Mean of per-sample minimum MSEs
+    return float(min_mse.mean())    # TODO: mean over samples of min MSE to any dataset image
+    pass
 
 # Step 20 - ddpm_experiment (not yet solved)
 # TODO: implement
