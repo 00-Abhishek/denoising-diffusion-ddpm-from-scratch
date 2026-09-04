@@ -340,8 +340,17 @@ def train_ddpm(
     return params, history    # TODO: minibatch SGD training loop
     pass
 
-# Step 15 - predict_x0_from_eps (not yet solved)
-# TODO: implement
+# Step 15 - predict_x0_from_eps
+import torch
+import torch.nn.functional as F
+
+def predict_x0_from_eps(x_t, t, eps, alphas_cumprod):
+    alpha_bar_t = extract_into_batch(alphas_cumprod, t, x_t)
+
+    return (
+        x_t - torch.sqrt(1.0 - alpha_bar_t) * eps
+    ) / torch.sqrt(alpha_bar_t)    # TODO: invert the q_sample equation for x0
+    pass
 
 # Step 16 - ddpm_p_mean_variance (not yet solved)
 # TODO: implement
