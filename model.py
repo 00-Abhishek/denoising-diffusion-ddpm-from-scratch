@@ -478,6 +478,70 @@ def sample_quality_mse(samples, dataset) -> float:
     return float(min_mse.mean())    # TODO: mean over samples of min MSE to any dataset image
     pass
 
-# Step 20 - ddpm_experiment (not yet solved)
-# TODO: implement
+# Step 20 - ddpm_experiment
+import torch
+import torch.nn.functional as F
+
+def ddpm_experiment(
+    n_data: int = 64,
+    size: int = 8,
+    T: int = 20,
+    hidden: int = 16,
+    num_steps: int = 50,
+    batch_size: int = 16,
+    lr: float = 1e-2,
+    n_samples: int = 4,
+    seed: int = 0,
+):
+    # 1. Create dataset
+    dataset = make_blob_dataset(n_data, size, seed)
+
+    # 2. Build diffusion schedule
+    schedule = build_diffusion_schedule(T)
+
+    # 3. Initialize tiny denoiser
+    params = init_tiny_unet(
+        in_ch=1,
+        hidden=hidden,
+        time_dim=hidden,
+        seed=seed
+    )
+
+    # 4. Train the DDPM
+    params, history = train_ddpm(
+        dataset,
+        params,
+        schedule,
+        num_steps=num_steps,
+        batch_size=batch_size,
+        lr=lr,
+        seed=seed
+    )
+
+    # 5. Generate samples
+    samples = ddpm_sample_loop(
+        params,
+        schedule,
+        (n_samples, 1, size, size),
+        seed=seed + 1
+    )
+
+    # 6. Generate pure noise for comparison
+    torch.manual_seed(seed + 2)
+    pure_noise = torch.randn(
+        n_samples, 1, size, size
+    )
+
+    # 7. Compute metrics
+    sample_mse = sample_quality_mse(samples, dataset)
+    noise_mse = sample_quality_mse(pure_noise, dataset)
+
+    return {
+        "train_losses": history,
+        "final_loss": float(history[-1]),
+        "sample_mse": float(sample_mse),
+        "noise_mse": float(noise_mse),
+        "improvement": float(noise_mse - sample_mse),
+    }    # TODO: data -> train -> sample -> metrics
+    pass
 
