@@ -50,8 +50,20 @@ def extract_into_batch(a, t, x):
 
     pass
 
-# Step 5 - q_sample (not yet solved)
-# TODO: implement
+# Step 5 - q_sample
+import torch
+import torch.nn.functional as F
+
+def q_sample(x0, t, noise, alphas_cumprod):
+    # TODO: x_t = sqrt(bar_alpha_t) * x0 + sqrt(1 - bar_alpha_t) * noise
+    alpha_bar_t = extract_into_batch(alphas_cumprod, t, x0)
+
+    return (
+        torch.sqrt(alpha_bar_t) * x0
+        + torch.sqrt(1.0 - alpha_bar_t) * noise
+    )
+
+    pass
 
 # Step 6 - build_diffusion_schedule (not yet solved)
 # TODO: implement
