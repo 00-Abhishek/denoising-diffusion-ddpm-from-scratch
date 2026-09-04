@@ -352,8 +352,51 @@ def predict_x0_from_eps(x_t, t, eps, alphas_cumprod):
     ) / torch.sqrt(alpha_bar_t)    # TODO: invert the q_sample equation for x0
     pass
 
-# Step 16 - ddpm_p_mean_variance (not yet solved)
-# TODO: implement
+# Step 16 - ddpm_p_mean_variance
+import torch
+import torch.nn.functional as F
+
+def ddpm_p_mean_variance(x_t, t, eps, schedule: dict):
+    # Predict clean image
+    x0_hat = predict_x0_from_eps(
+        x_t, t, eps, schedule["alphas_cumprod"]
+    ).clamp(-1, 1)
+
+    # Current timestep values
+    alpha_t = extract_into_batch(schedule["alphas"], t, x_t)
+    alpha_bar_t = extract_into_batch(
+        schedule["alphas_cumprod"], t, x_t
+    )
+    beta_t = extract_into_batch(schedule["betas"], t, x_t)
+
+    # alpha_bar_(t-1), with alpha_bar_-1 = 1
+    alphas_cumprod_prev = torch.cat([
+        torch.ones(
+            1,
+            dtype=schedule["alphas_cumprod"].dtype,
+            device=schedule["alphas_cumprod"].device
+        ),
+        schedule["alphas_cumprod"][:-1]
+    ])
+
+    alpha_bar_prev = extract_into_batch(
+        alphas_cumprod_prev, t, x_t
+    )
+
+    # Posterior mean
+    mean = (
+        torch.sqrt(alpha_bar_prev) * beta_t
+        / (1.0 - alpha_bar_t)
+    ) * x0_hat + (
+        torch.sqrt(alpha_t) * (1.0 - alpha_bar_prev)
+        / (1.0 - alpha_bar_t)
+    ) * x_t
+
+    # Simplified fixed variance
+    variance = beta_t
+
+    return mean, variance, x0_hat    # TODO: return (posterior_mean, variance, x0_hat)
+    pass
 
 # Step 17 - ddpm_p_sample (not yet solved)
 # TODO: implement
