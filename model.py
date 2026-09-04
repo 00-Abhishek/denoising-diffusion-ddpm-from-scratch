@@ -176,14 +176,128 @@ def init_tiny_unet(
         "conv_out_b": bias((in_ch,)),
     }
 
-# Step 11 - tiny_unet_forward (not yet solved)
-# TODO: implement
+# Step 11 - tiny_unet_forward
+import torch
+import torch.nn.functional as F
 
-# Step 12 - make_blob_dataset (not yet solved)
-# TODO: implement
+def tiny_unet_forward(x, t, params: dict):
+    # 1. Input convolution
+    h = F.conv2d(
+        x,
+        params["conv_in_w"],
+        params["conv_in_b"],
+        padding=1
+    )
 
-# Step 13 - ddpm_train_step (not yet solved)
-# TODO: implement
+    # 2. Timestep embedding + time MLP
+    temb = timestep_embedding(t, params["time_mlp_w"].shape[1])
+
+    temb = F.relu(
+        F.linear(
+            temb,
+            params["time_mlp_w"],
+            params["time_mlp_b"]
+        )
+    )
+
+    # Add time embedding to every spatial position
+    h = h + temb[:, :, None, None]
+
+    # 3. Middle convolution + ReLU
+    h = F.relu(
+        F.conv2d(
+            h,
+            params["conv_mid_w"],
+            params["conv_mid_b"],
+            padding=1
+        )
+    )
+
+    # 4. Output convolution
+    return F.conv2d(
+        h,
+        params["conv_out_w"],
+        params["conv_out_b"],
+        padding=1
+    )
+    # TODO: time-conditioned tiny CNN predicting noise
+    pass
+
+# Step 12 - make_blob_dataset
+import torch
+import torch.nn.functional as F
+
+def make_blob_dataset(n: int = 128, size: int = 8, seed: int = 0):
+    torch.manual_seed(seed)
+
+    images = torch.zeros(n, 1, size, size)
+    radius = size // 4
+
+    yy, xx = torch.meshgrid(
+        torch.arange(size),
+        torch.arange(size),
+        indexing="ij"
+    )
+
+    for i in range(n):
+        center = torch.randint(radius, size - radius, (2,))
+        cy, cx = center[0], center[1]
+
+        mask = (yy - cy) ** 2 + (xx - cx) ** 2 <= radius ** 2
+        images[i, 0][mask] = 1.0
+
+    return images
+    # TODO: n images with a random bright disk on a black background
+    pass
+
+# Step 13 - ddpm_train_step
+import torch
+import torch.nn.functional as F
+
+def ddpm_train_step(
+    params: dict,
+    x0,
+    schedule: dict,
+    lr: float = 1e-2,
+    seed: int = 0
+):
+    # Seed RNG for deterministic timestep and noise sampling
+    torch.manual_seed(seed)
+
+    B = x0.shape[0]
+    T = schedule["T"]
+
+    # Sample timesteps uniformly from [0, T)
+    t = torch.randint(0, T, (B,), device=x0.device)
+
+    # Sample Gaussian noise
+    noise = torch.randn_like(x0)
+
+    # Compute DDPM noise-prediction loss
+    loss = diffusion_training_loss(
+        lambda x, t: tiny_unet_forward(x, t, params),
+        x0,
+        t,
+        noise,
+        schedule["alphas_cumprod"],
+    )
+
+    # Backpropagation
+    loss.backward()
+
+    # SGD update, creating fresh leaf tensors
+    new_params = {}
+
+    for name, p in params.items():
+        if p.grad is not None:
+            new_params[name] = (
+                p - lr * p.grad
+            ).detach().requires_grad_(True)
+        else:
+            new_params[name] = p.detach().clone().requires_grad_(True)
+
+    return new_params, float(loss)    # TODO: sample t,noise -> loss -> SGD on params
+    pass
 
 # Step 14 - train_ddpm (not yet solved)
 # TODO: implement

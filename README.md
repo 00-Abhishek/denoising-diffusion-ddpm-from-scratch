@@ -20,9 +20,9 @@ python scaffold.py
 - [x] **8.** diffusion_training_loss
 - [x] **9.** timestep_embedding
 - [x] **10.** init_tiny_unet
-- [ ] **11.** tiny_unet_forward
-- [ ] **12.** make_blob_dataset
-- [ ] **13.** ddpm_train_step
+- [x] **11.** tiny_unet_forward
+- [x] **12.** make_blob_dataset
+- [x] **13.** ddpm_train_step
 - [ ] **14.** train_ddpm
 - [ ] **15.** predict_x0_from_eps
 - [ ] **16.** ddpm_p_mean_variance
