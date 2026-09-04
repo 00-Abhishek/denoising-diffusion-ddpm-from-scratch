@@ -101,11 +101,47 @@ def noise_prediction_loss(noise_pred, noise):
     # TODO: MSE between predicted and true noise
     pass
 
-# Step 8 - diffusion_training_loss (not yet solved)
-# TODO: implement
+# Step 8 - diffusion_training_loss
+import torch
+import torch.nn.functional as F
 
-# Step 9 - timestep_embedding (not yet solved)
-# TODO: implement
+def diffusion_training_loss(model, x0, t, noise, alphas_cumprod):
+    xt = q_sample(x0, t, noise, alphas_cumprod)
+
+    # Predict the noise
+    noise_pred = model(xt, t)
+
+    # Calculate MSE loss
+    return noise_prediction_loss(noise_pred, noise)
+    # TODO: q_sample -> model -> MSE(noise_pred, noise)
+    pass
+
+# Step 9 - timestep_embedding
+import torch
+import torch.nn.functional as F
+
+def timestep_embedding(t, dim: int):
+    half = dim // 2
+
+    if half == 1:
+        exponent = torch.zeros(1, device=t.device)
+    else:
+        exponent = torch.arange(
+            half, device=t.device, dtype=torch.float32
+        ) / (half - 1)
+
+    frequencies = 1.0 / (10000 ** exponent)
+
+    angles = t.float().unsqueeze(1) * frequencies.unsqueeze(0)
+
+    emb = torch.cat(
+        [torch.sin(angles), torch.cos(angles)],
+        dim=1
+    )
+
+    return emb
+    # TODO: sinusoidal timestep embedding of shape (B, dim)
+    pass
 
 # Step 10 - init_tiny_unet (not yet solved)
 # TODO: implement
